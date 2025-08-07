@@ -132,7 +132,7 @@ const twoFAVerifyOptions = {
 const testMode = !!args["test"] || false;
 
 // Must be after io instantiation
-const { sendNotificationList, sendHeartbeatList, sendInfo, sendProxyList, sendDockerHostList, sendAPIKeyList, sendRemoteBrowserList, sendMonitorTypeList } = require("./client");
+const { sendNotificationList, sendHeartbeatList, sendInfo, sendProxyList, sendDockerHostList, sendAPIKeyList, sendRemoteBrowserList, sendMonitorTypeList, sendTeamsUserList } = require("./client");
 const { statusPageSocketHandler } = require("./socket-handlers/status-page-socket-handler");
 const { databaseSocketHandler } = require("./socket-handlers/database-socket-handler");
 const { remoteBrowserSocketHandler } = require("./socket-handlers/remote-browser-socket-handler");
@@ -144,6 +144,7 @@ const { dockerSocketHandler } = require("./socket-handlers/docker-socket-handler
 const { maintenanceSocketHandler } = require("./socket-handlers/maintenance-socket-handler");
 const { apiKeySocketHandler } = require("./socket-handlers/api-key-socket-handler");
 const { generalSocketHandler } = require("./socket-handlers/general-socket-handler");
+const { teamsUserSocketHandler } = require("./socket-handlers/teams-user-socket-handler");
 const { Settings } = require("./settings");
 const apicache = require("./modules/apicache");
 const { resetChrome } = require("./monitor-types/real-browser-monitor-type");
@@ -1594,6 +1595,7 @@ let needSetup = false;
         maintenanceSocketHandler(socket);
         apiKeySocketHandler(socket);
         remoteBrowserSocketHandler(socket);
+        teamsUserSocketHandler(socket);
         generalSocketHandler(socket, server);
         chartSocketHandler(socket);
 
@@ -1705,6 +1707,7 @@ async function afterLogin(socket, user) {
         sendAPIKeyList(socket),
         sendRemoteBrowserList(socket),
         sendMonitorTypeList(socket),
+        sendTeamsUserList(socket),
     ]);
 
     await StatusPage.sendStatusPageList(io, socket);

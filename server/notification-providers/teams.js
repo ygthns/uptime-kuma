@@ -1,6 +1,7 @@
 const NotificationProvider = require("./notification-provider");
 const axios = require("axios");
 const { setting } = require("../util-server");
+const { Settings } = require("../settings");
 const { DOWN, UP, getMonitorRelativeURL } = require("../../src/util");
 
 class Teams extends NotificationProvider {
@@ -44,6 +45,7 @@ class Teams extends NotificationProvider {
      * @param {string} args.monitorName Name of the monitor affected
      * @param {string} args.monitorUrl URL of the monitor affected
      * @param {string} args.dashboardUrl URL of the dashboard affected
+     * @param {object[]} args.mentions Teams users to mention
      * @returns {object} Notification payload
      */
     _notificationPayloadFactory = ({
@@ -51,6 +53,7 @@ class Teams extends NotificationProvider {
         monitorName,
         monitorUrl,
         dashboardUrl,
+        mentions = [],
     }) => {
         const status = heartbeatJSON?.status;
         const facts = [];
@@ -175,6 +178,32 @@ class Teams extends NotificationProvider {
             });
         }
 
+        if (mentions.length > 0) {
+            const mentionTexts = [];
+            const entities = [];
+            for (const user of mentions) {
+                const mentionStr = `<at>${user.name}</at>`;
+                mentionTexts.push(mentionStr);
+                entities.push({
+                    type: "mention",
+                    text: mentionStr,
+                    mentioned: {
+                        id: user.id,
+                        name: user.name,
+                    }
+                });
+            }
+
+            payload.attachments[0].content.body.push({
+                type: "TextBlock",
+                text: mentionTexts.join(" "),
+            });
+
+            payload.attachments[0].content.msteams = {
+                entities: entities,
+            };
+        }
+
         return payload;
     };
 
@@ -194,11 +223,19 @@ class Teams extends NotificationProvider {
      * @param {string} msg Message to send
      * @returns {Promise<void>}
      */
-    _handleGeneralNotification = (webhookUrl, msg) => {
+    /**
+     * Send a general notification
+     * @param {string} webhookUrl URL to send request to
+     * @param {string} msg Message to send
+     * @param {object[]} mentions Teams users to mention
+     * @returns {Promise<void>}
+     */
+    _handleGeneralNotification = (webhookUrl, msg, mentions) => {
         const payload = this._notificationPayloadFactory({
             heartbeatJSON: {
                 msg: msg
-            }
+            },
+            mentions,
         });
 
         return this._sendNotification(webhookUrl, payload);
@@ -211,8 +248,11 @@ class Teams extends NotificationProvider {
         const okMsg = "Sent Successfully.";
 
         try {
+            const userList = await Settings.get("teamsUsers") || [];
+            const selected = (notification.mentions || []).map(id => userList.find(u => u.id === id)).filter(Boolean);
+
             if (heartbeatJSON == null) {
-                await this._handleGeneralNotification(notification.webhookUrl, msg);
+                await this._handleGeneralNotification(notification.webhookUrl, msg, selected);
                 return okMsg;
             }
 
@@ -227,6 +267,7 @@ class Teams extends NotificationProvider {
                 monitorName: monitorJSON.name,
                 monitorUrl: this.extractAddress(monitorJSON),
                 dashboardUrl: dashboardUrl,
+                mentions: selected,
             });
 
             await this._sendNotification(notification.webhookUrl, payload);

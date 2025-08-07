@@ -9,6 +9,7 @@ const io = server.io;
 const { setting } = require("./util-server");
 const checkVersion = require("./check-version");
 const Database = require("./database");
+const { Settings } = require("./settings");
 
 /**
  * Send list of notification providers to client
@@ -214,6 +215,26 @@ async function sendRemoteBrowserList(socket) {
 }
 
 /**
+ * Emit Teams user list to client
+ * @param {Socket} socket Socket.io instance
+ * @returns {Promise<any[]>} List of Teams users
+ */
+async function sendTeamsUserList(socket) {
+    const timeLogger = new TimeLogger();
+
+    let list = await Settings.get("teamsUsers");
+    if (!Array.isArray(list)) {
+        list = [];
+    }
+
+    io.to(socket.userID).emit("teamsUserList", list);
+
+    timeLogger.print("Send Teams User List");
+
+    return list;
+}
+
+/**
  * Send list of monitor types to client
  * @param {Socket} socket Socket.io socket instance
  * @returns {Promise<void>}
@@ -249,4 +270,5 @@ module.exports = {
     sendDockerHostList,
     sendRemoteBrowserList,
     sendMonitorTypeList,
+    sendTeamsUserList,
 };

@@ -107,6 +107,9 @@ export default {
                 "remote-browsers": {
                     title: this.$t("Remote Browsers"),
                 },
+                "teams-users": {
+                    title: this.$t("Teams Users"),
+                },
                 security: {
                     title: this.$t("Security"),
                 },
