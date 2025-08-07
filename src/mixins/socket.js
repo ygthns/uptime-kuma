@@ -48,6 +48,7 @@ export default {
             notificationList: [],
             dockerHostList: [],
             remoteBrowserList: [],
+            teamsUserList: [],
             statusPageListLoaded: false,
             statusPageList: [],
             proxyList: [],
@@ -195,6 +196,10 @@ export default {
 
             socket.on("remoteBrowserList", (data) => {
                 this.remoteBrowserList = data;
+            });
+
+            socket.on("teamsUserList", (data) => {
+                this.teamsUserList = data;
             });
 
             socket.on("heartbeat", (data) => {
